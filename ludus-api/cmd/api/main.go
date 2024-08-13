@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/KaliszS/Ludus/internal/models"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -17,6 +19,7 @@ type config struct {
 
 type application struct {
 	logger *slog.Logger
+	quiz *models.QuizModel
 }
 
 func main() {
@@ -38,6 +41,7 @@ func main() {
 
 	app := &application{
 		logger: logger,
+		quiz: &models.QuizModel{DB: db},
 	}
 
 	logger.Info("starting server", slog.String("addr", cfg.addr))
