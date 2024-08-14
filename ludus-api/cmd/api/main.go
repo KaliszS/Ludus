@@ -6,9 +6,12 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/KaliszS/Ludus/internal/models"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -20,6 +23,7 @@ type config struct {
 type application struct {
 	logger *slog.Logger
 	quiz *models.QuizModel
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -39,9 +43,14 @@ func main() {
 
 	defer db.Close()
 
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &application{
 		logger: logger,
 		quiz: &models.QuizModel{DB: db},
+		sessionManager: sessionManager,
 	}
 
 	logger.Info("starting server", slog.String("addr", cfg.addr))

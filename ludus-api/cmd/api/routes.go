@@ -1,14 +1,20 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
 
-func (app *application) routes() *http.ServeMux {
+	"github.com/justinas/alice"
+)
+
+func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /{$}", app.home)
-	mux.HandleFunc("GET /quiz/view/{id}", app.quizView)
+	mux.HandleFunc("GET /quiz/{id}", app.quizView)
 	mux.HandleFunc("GET /quiz/create", app.quizCreate)
-	mux.HandleFunc("POST /quiz/create", app.quizCreatePost)
+	mux.HandleFunc("POST /quiz", app.quizCreatePost)
 
-	return mux
+	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, commonHeaders, app.sessionManager.LoadAndSave)
+
+	return standardMiddleware.Then(mux)
 }
