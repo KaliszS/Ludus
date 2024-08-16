@@ -9,6 +9,8 @@ import (
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /v1/healthcheck", app.healthcheckHandler)
+
 	mux.HandleFunc("GET /{$}", app.home)
 	mux.HandleFunc("GET /quiz/{id}", app.quizView)
 	mux.HandleFunc("GET /quiz/create", app.quizCreate)

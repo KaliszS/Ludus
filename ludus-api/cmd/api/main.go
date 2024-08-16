@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"fmt"
 
 	"github.com/KaliszS/Ludus/internal/models"
 
@@ -15,21 +16,28 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+const version = "1.0.0"
+
 type config struct {
 	addr string
 	dsn string
+	port int
+	env string
 }
 
 type application struct {
+	config config
 	logger *slog.Logger
 	quiz *models.QuizModel
 	sessionManager *scs.SessionManager
 }
 
+
 func main() {
 	var cfg config
 
-	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
+	flag.IntVar(&cfg.port, "port", 4000, "API server port")
+	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.dsn, "dsn", "web:password@/ludus?parseTime=true", "MySQL data source name")
 	flag.Parse()
 
@@ -48,14 +56,24 @@ func main() {
 	sessionManager.Lifetime = 12 * time.Hour
 
 	app := &application{
+		config: cfg,
 		logger: logger,
 		quiz: &models.QuizModel{DB: db},
 		sessionManager: sessionManager,
 	}
 
-	logger.Info("starting server", slog.String("addr", cfg.addr))
+	srv := &http.Server{
+		Addr: fmt.Sprintf(":%d", cfg.port),
+		Handler: app.routes(),
+		IdleTimeout: time.Minute,
+		ReadTimeout: 5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	}
 
-	err = http.ListenAndServe(cfg.addr, app.routes())
+	logger.Info("starting server", slog.String("addr", srv.Addr))
+
+	err = srv.ListenAndServe()
 	logger.Error(err.Error())
 	os.Exit(1)
 }
