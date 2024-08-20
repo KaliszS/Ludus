@@ -3,20 +3,19 @@ package main
 import (
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
 
 func (app *application) routes() http.Handler {
-	mux := http.NewServeMux()
+	router := httprouter.New()
 
-	mux.HandleFunc("GET /v1/healthcheck", app.healthcheckHandler)
-
-	mux.HandleFunc("GET /{$}", app.home)
-	mux.HandleFunc("GET /quiz/{id}", app.quizView)
-	mux.HandleFunc("GET /quiz/create", app.quizCreate)
-	mux.HandleFunc("POST /quiz", app.quizCreatePost)
+	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+	router.HandlerFunc(http.MethodGet, "/v1", app.home)
+	router.HandlerFunc(http.MethodGet, "/v1/quiz/:id", app.quizView)
+	router.HandlerFunc(http.MethodPost, "/v1/quiz", app.quizCreate)
 
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, commonHeaders, app.sessionManager.LoadAndSave)
 
-	return standardMiddleware.Then(mux)
+	return standardMiddleware.Then(router)
 }

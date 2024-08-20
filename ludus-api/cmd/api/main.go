@@ -3,11 +3,11 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
-	"fmt"
 
 	"github.com/KaliszS/Ludus/internal/models"
 
@@ -19,19 +19,17 @@ import (
 const version = "1.0.0"
 
 type config struct {
-	addr string
-	dsn string
+	dsn  string
 	port int
-	env string
+	env  string
 }
 
 type application struct {
-	config config
-	logger *slog.Logger
-	quiz *models.QuizModel
+	config         config
+	logger         *slog.Logger
+	quiz           *models.QuizModel
 	sessionManager *scs.SessionManager
 }
-
 
 func main() {
 	var cfg config
@@ -56,19 +54,19 @@ func main() {
 	sessionManager.Lifetime = 12 * time.Hour
 
 	app := &application{
-		config: cfg,
-		logger: logger,
-		quiz: &models.QuizModel{DB: db},
+		config:         cfg,
+		logger:         logger,
+		quiz:           &models.QuizModel{DB: db},
 		sessionManager: sessionManager,
 	}
 
 	srv := &http.Server{
-		Addr: fmt.Sprintf(":%d", cfg.port),
-		Handler: app.routes(),
-		IdleTimeout: time.Minute,
-		ReadTimeout: 5 * time.Second,
+		Addr:         fmt.Sprintf(":%d", cfg.port),
+		Handler:      app.routes(),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
 	logger.Info("starting server", slog.String("addr", srv.Addr))
