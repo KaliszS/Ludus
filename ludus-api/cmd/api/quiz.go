@@ -8,7 +8,7 @@ import (
 	"github.com/KaliszS/Ludus/internal/models"
 )
 
-func (app *application) home(w http.ResponseWriter, r *http.Request) {
+func (app *application) homeHandler(w http.ResponseWriter, r *http.Request) {
 	quizzes, err := app.quiz.Latest()
 	if err != nil {
 		app.serverError(w, r, err)
@@ -20,7 +20,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) quizView(w http.ResponseWriter, r *http.Request) {
+func (app *application) quizViewHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
 		http.NotFound(w, r)
@@ -40,7 +40,7 @@ func (app *application) quizView(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%+v", quiz)
 }
 
-func (app *application) quizCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) quizCreateHandler(w http.ResponseWriter, r *http.Request) {
 	title := "Example Quiz"
 	content := "This is an example quiz"
 
