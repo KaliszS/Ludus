@@ -1,54 +1,81 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/KaliszS/Ludus/internal/models"
+	"github.com/KaliszS/Ludus/internal/data"
+	"github.com/KaliszS/Ludus/internal/validator"
 )
-
-func (app *application) homeHandler(w http.ResponseWriter, r *http.Request) {
-	quizzes, err := app.quiz.Latest()
-	if err != nil {
-		app.serverError(w, r, err)
-		return
-	}
-
-	for _, quiz := range quizzes {
-		fmt.Fprintf(w, "%+v\n", quiz)
-	}
-}
 
 func (app *application) quizViewHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
-		http.NotFound(w, r)
+		app.notFoundResponse(w, r)
 		return
 	}
 
-	quiz, err := app.quiz.Get(int(id))
+	quiz := data.Quiz{
+		ID:      id,
+		Title:   "Example Quiz",
+		Content: "This is an example quiz",
+		Created: time.Now(),
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"quiz": quiz}, nil)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			http.NotFound(w, r)
-		} else {
-			app.serverError(w, r, err)
-		}
-		return
+		app.serverErrorResponse(w, r, err)
 	}
 
-	fmt.Fprintf(w, "%+v", quiz)
+	// quiz, err := app.quiz.Get(int(id))
+	// if err != nil {
+	// 	if errors.Is(err, models.ErrNoRecord) {
+	// 		http.NotFound(w, r)
+	// 	} else {
+	// 		app.serverError(w, r, err)
+	// 	}
+	// 	return
+	// }
+
+	// fmt.Fprintf(w, "%+v", quiz)
 }
 
 func (app *application) quizCreateHandler(w http.ResponseWriter, r *http.Request) {
-	title := "Example Quiz"
-	content := "This is an example quiz"
+	var input struct {
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
 
-	id, err := app.quiz.Insert(title, content)
+	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.serverError(w, r, err)
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/quiz/%d", id), http.StatusSeeOther)
+	quiz := &data.Quiz{
+		Title:   input.Title,
+		Content: input.Content,
+		Created: time.Now(),
+	}
+
+	v := validator.New()
+
+	if data.ValidateQuiz(v, quiz); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	fmt.Fprintf(w, "%+v\n", input)
+
+	// title := "Example Quiz"
+	// content := "This is an example quiz"
+
+	// id, err := app.quiz.Insert(title, content)
+	// if err != nil {
+	// 	app.serverError(w, r, err)
+	// 	return
+	// }
+
+	// http.Redirect(w, r, fmt.Sprintf("/quiz/%d", id), http.StatusSeeOther)
 }

@@ -10,8 +10,10 @@ import (
 func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
+	router.NotFound = http.HandlerFunc(app.notFoundResponse)
+	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
+
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-	router.HandlerFunc(http.MethodGet, "/v1", app.homeHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/quiz/:id", app.quizViewHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/quiz", app.quizCreateHandler)
 
